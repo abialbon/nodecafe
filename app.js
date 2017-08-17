@@ -3,18 +3,42 @@ const express   = require('express'),
       path      = require('path'),
       routes    = require('./routes/index'),
       session   = require('express-session'),
+      mongoose  = require('mongoose'),
+      MongoStore= require('connect-mongo')(session),
+      // Environment variables
+      ENV       = process.env.NODE_env || 'development',
+      SECRET    = process.env.SESSION_secret,
+      DB_URL    = process.env.DB_url,
       PORT      = process.env.PORT,
       IP        = process.env.IP;
       
+// Database connection
+mongoose.connect(DB_URL);
+
 // App variables
 app.locals.title = 'NodeCafe'
 
 // Session
-app.use(session({
-   secret: process.env.session_SECRET,
-   resave: false,
-   saveUninitialized: true
-}));
+// Switching stores based on environment
+if (ENV == 'development') 
+{
+   app.use(session({
+      secret: SECRET,
+      resave: false,
+      saveUninitialized: true
+   }));
+} 
+else if (ENV == 'production') 
+{
+   app.use(session({
+      secret: SECRET,
+      resave: false,
+      saveUninitialized: true,
+      store: new MongoStore({
+         mongooseConnection: mongoose.connection
+      })
+   }));
+}
 
 // View settings
 app.set('views', path.join(__dirname, 'views'));
